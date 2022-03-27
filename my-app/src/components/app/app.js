@@ -8,40 +8,17 @@ import EmployeesAddForm from '../employees-add-form/employees-add-form';
 
 import './app.css';
 
-// class WhoAmI extends Component{
-//   constructor(props){
-//     super(props)
-//     this.state = {
-//       years: 10,
-//     }
-//   }
-
-//   nextYear = () =>{
-//     this.setState(state => ({
-//       years: state.years + 1
-//     }))
-//   }
-
-//   render(){
-//     const {name, lastName} = this.props
-//     return(
-//       <div>
-//         <h1>{name} {lastName}</h1> <span>{this.state.years}</span>
-//         <button onClick={this.nextYear}>+1</button>
-//       </div>
-//     )
-//   }
-// }
-
 class App extends Component{
   constructor(props){
     super(props)
     this.state = {
       data: [
-        {name: 'Name 1', salary: 1000, increase: false, id:1},
-        {name: 'Name 2', salary: 2000, increase: true, id:2},
-        {name: 'Name 3', salary: 3000, increase: false, id:3},
+        {name: 'Name 1', salary: 1000, increase: false, rise: true, id:1},
+        {name: 'Name 2', salary: 2000, increase: true, rise: false, id:2},
+        {name: 'Name 3', salary: 3000, increase: false, rise: false, id:3},
       ],
+      term: "",
+      filterType: "all",
       maxId: 4
     }
   }
@@ -54,12 +31,13 @@ class App extends Component{
     })
   }
 
-  onAdd = (name, salary) => {
+  addItem = (name, salary) => {
     this.setState(({data}) => {
       const newItem = {
         name: name,
         salary: salary,
         increase: false,
+        rise: false,
         id:this.state.maxId
       }
 
@@ -71,20 +49,86 @@ class App extends Component{
     })
   }
 
-  render(){
-    const {data} = this.state;
+  onToggleProp = (id, prop) => {
+    this.setState(({data}) =>{
+      return{
+        data: data.map(item => {
+          if(item.id == id){
+            return {...item, [prop]: !item[prop]}
+          }
+          return item
+        })
+      }
+    })
+  }
 
+  searchEmp = (items, term) =>{
+    if(term.length < 1){
+      return items
+    }
+
+    return items.filter(item => {
+      return item.name.indexOf(term) > -1
+    })
+  }
+
+  onUpdateTerm = (term) =>{
+    this.setState({term: term})
+  }
+
+  filterUpdateType = (type) =>{
+    this.setState({filterType: type})
+  }
+
+  onFilterEmp = (visibleData) =>{
+    if(this.state.filterType === 'all'){
+      return visibleData
+    }
+    else if(this.state.filterType === 'rise'){
+      visibleData = visibleData.filter(item => item.rise == true)
+      return visibleData;
+    }
+    else if(this.state.filterType === 'salary'){
+      visibleData = visibleData.filter(item => item.salary > 1000)
+      return visibleData;
+    }
+    else{
+      return visibleData
+    }
+  }
+
+  salaryUpdate = (id, newsalary) => {
+    this.setState(({data}) =>{
+      return{
+        data: data.map(item => {
+          if(item.id == id){
+            return {...item, salary: newsalary}
+          }
+          return item
+        })
+      }
+    })
+    console.log(id,newsalary)
+  }
+
+  render(){
+    const {data, term} = this.state;
+    const empCount = data.length
+    const increaseCount = data.filter(item => item.increase).length;
+    let visibleData = this.searchEmp(data, term)
+    visibleData = this.onFilterEmp(visibleData)
+    
     return (
       <div className="app">
-          <AppInfo />
+          <AppInfo empCount={empCount} increaseCount={increaseCount}/>
   
           <div className="search-panel">
-              <SearchPanel/>
-              <AppFilter/>
+              <SearchPanel onUpdateTerm={this.onUpdateTerm}/>
+              <AppFilter filterUpdateType={this.filterUpdateType} filterType={this.state.filterType}/>
           </div>
           
-          <EmployeesList data={data} onDelete={this.deleteItem}/>
-          <EmployeesAddForm onAdd={this.onAdd}/>
+          <EmployeesList data={visibleData} onDelete={this.deleteItem} onToggleProp={this.onToggleProp} salaryUpdate={this.salaryUpdate}/>
+          <EmployeesAddForm addItem={this.addItem}/>
 
       </div>
     )
